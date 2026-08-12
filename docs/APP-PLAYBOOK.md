@@ -56,16 +56,29 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
    move" or similar, confirm nothing else is already serving that port
    (`lsof -ti :PORT`) — a leftover server from another repo/build
    produced exactly that false alarm once.
-9. **Register the worker with the kit's `registerServiceWorker()` — never
-   a bare `navigator.serviceWorker.register()`.** With
-   `injectRegister: false`, `registerType: "autoUpdate"` is INERT: the
-   generated worker skips waiting only when messaged, and vite-plugin-pwa
-   puts that message in the registration code it did not inject. All nine
-   PWA games shipped the bare call, so every returning player stayed
+9. **Updates need BOTH sides wired — the worker and the page.** With
+   `injectRegister: false`, `registerType: "autoUpdate"` is INERT:
+   vite-plugin-pwa implements it in the registration code it did not
+   inject, so the generated worker skips waiting only when messaged, and
+   nothing messages it. All nine PWA games shipped a bare
+   `navigator.serviceWorker.register()`, so every returning player stayed
    frozen on the build they first loaded — two landed fixes reached
-   nobody who had already played. Verify after any deploy that the LIVE
-   page runs the new bundle, not merely that the server offers it (see
-   the release check below).
+   nobody who had already played.
+
+   - **Worker side**, in `astro.config.mjs`'s `workbox` block: set
+     `skipWaiting: true` and `clientsClaim: true` explicitly. This is
+     what actually rescues an ALREADY-STUCK client, because the browser
+     re-fetches `sw.js` by byte comparison on navigation, independently
+     of page JS.
+   - **Page side**: register via the kit's `registerServiceWorker()`, so
+     the running page reloads once when the new worker takes over
+     instead of continuing on stale JS.
+
+   Both are required, and the order matters for a fleet already in the
+   wild: a page-side-only fix cannot reach a stuck client, because the
+   fix ships inside the very JS the old worker refuses to stop serving.
+   Verify after any deploy that the LIVE page runs the new bundle, not
+   merely that the server offers it (see the release check below).
 
 ## Non-negotiables (all games)
 
