@@ -16,6 +16,17 @@ export const KNOWN_GAMES: readonly SneatGame[] = [
   { id: "dots-and-boxes", title: "Dots & Boxes", emoji: "🔲", url: "https://dots-and-boxes.sneat.games" },
   { id: "hex", title: "Hex", emoji: "⬡", url: "https://hex.sneat.games" },
   { id: "reversi", title: "Reversi", emoji: "⚫", url: "https://reversi.sneat.games" },
+  // Wave B (founder-approved 2026-08-12): same shape as D&B/Hex/Reversi.
+  { id: "four-in-a-row", title: "Four in a Row", emoji: "🔴", url: "https://four-in-a-row.sneat.games" },
+  { id: "gomoku", title: "Gomoku", emoji: "5️⃣", url: "https://gomoku.sneat.games" },
+  {
+    id: "ultimate-tictactoe",
+    title: "Ultimate Tic-Tac-Toe",
+    emoji: "🎯",
+    url: "https://ultimate-tictactoe.sneat.games",
+  },
+  { id: "domineering", title: "Domineering", emoji: "🧱", url: "https://domineering.sneat.games" },
+  { id: "y", title: "Y", emoji: "🔺", url: "https://y.sneat.games" },
   // The founder's main game — not itself built on this kit (its own site is
   // separate), but every casual game cross-promotes it.
   { id: "chessraiders", title: "Chess Raiders", emoji: "♞", url: "https://chessraiders.com" },
