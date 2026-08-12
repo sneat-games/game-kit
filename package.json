@@ -1,0 +1,49 @@
+{
+  "name": "@sneat/game-kit",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "license": "MIT",
+  "description": "Shared vanilla-TypeScript kit for Sneat turn-based web games: hidden-bid auction core, turn clocks, WebRTC PvP transport, commit-reveal protocol, and the Sneat Games design system.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sneat-games/game-kit.git"
+  },
+  "homepage": "https://github.com/sneat-games/game-kit#readme",
+  "bugs": {
+    "url": "https://github.com/sneat-games/game-kit/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./theme.css": "./dist/theme.css",
+    "./test-relay": "./dist/test-relay.mjs"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "prepare": "npm run build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.10.0",
+    "eslint": "^9.10.0",
+    "globals": "^17.9.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
