@@ -213,6 +213,48 @@ Player colours: discs are near-black / near-ivory with visible rims in
 both themes; the game overrides `--p1`/`--p2` accordingly so log bars and
 balances match the discs (contrast via rims/borders, not hue alone).
 
+## Wave B games (founder approved 2026-08-12)
+
+Five more kit games, same shape as D&B/Hex (private repo, subdomain,
+classic + bidding, vs bot + vs friend, PWA, CG/itch, cross-promo):
+
+| Repo | Subdomain / gameId | Accent | Board |
+|---|---|---|---|
+| `four-in-a-row` | four-in-a-row.sneat.games | blue #2563eb | 7×6 |
+| `gomoku` | gomoku.sneat.games | violet #7c3aed | 15×15 |
+| `ultimate-tictactoe` | ultimate-tictactoe.sneat.games | pink #db2777 | 9×(3×3) |
+| `domineering` | domineering.sneat.games | orange #ea580c | 6×6/8×8/10×10 |
+| `y-game` | y.sneat.games / gameId `y` | lime #65a30d | triangle side 9/11/13 |
+
+- **Four in a Row**: gravity drops into columns; 4+ in a line (h/v/diag)
+  wins; full board draws. Classic alternates; classic play is solved
+  (first player wins) — the bidding mode is the "fair" headline mode.
+  Bidding: commit (bid + column) BTTT-style; winner drops.
+- **Gomoku**: freestyle rule — five OR MORE in a row wins (documented
+  choice; casual convention). No swap2 in classic — bidding is our
+  fairness fix. Bidding: commit (bid + cell).
+- **Ultimate Tic-Tac-Toe**: move = (local board, cell); you must play in
+  the macro cell matching the LAST move's local cell unless that board
+  is closed (won or full) → then anywhere open. Winning a local board
+  claims its macro cell; a drawn local board counts for neither. Macro
+  3-in-a-row wins; when no legal moves remain, most local boards won
+  wins, tie = draw. Bidding: commit (bid + move) — the constraint is
+  derived from board state so it binds both players identically.
+- **Domineering**: P1 places vertical 2×1 dominoes, P2 horizontal.
+  Classic alternates; the first player unable to place on their turn
+  loses; no draws. Bidding: auction per placement (commit bid +
+  placement); a player with no legal placement of their orientation
+  LOSES immediately — checked after every placement, and when one
+  placement strands both players the non-placer loses. This preserves
+  the classic last-to-move-wins spirit under auctions; Domineering is
+  the purest tempo game, which is exactly what the auction prices.
+- **Y**: triangular board, hex connectivity, rows 1..N (row r has r
+  cells); connect ALL THREE sides; corners belong to both adjacent
+  sides; a full board always has a winner (Y theorem). Classic has the
+  pie rule — and because both players share the same goal, the swap is
+  a plain ownership flip, no mirroring (unlike Hex). Bidding: commit
+  (bid + cell), no swap.
+
 ## Bots (MVP: "simple, random-with-manners")
 
 - D&B: take a completing edge if any; else prefer a safe edge (one that
