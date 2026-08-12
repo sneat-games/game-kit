@@ -27,7 +27,7 @@ export const KNOWN_GAMES: readonly SneatGame[] = [
   },
   { id: "domineering", title: "Domineering", emoji: "🧱", url: "https://domineering.sneat.games" },
   { id: "y", title: "Y", emoji: "🔺", url: "https://y.sneat.games" },
-  { id: "greed-game", title: "The Greed Game", emoji: "💰", url: "https://greed-game.sneat.games" },
+  { id: "greed-game", title: "The Greed Game", emoji: "💰", url: "https://greed.sneat.games" },
   // The founder's main game — not itself built on this kit (its own site is
   // separate), but every casual game cross-promotes it.
   { id: "chessraiders", title: "Chess Raiders", emoji: "♞", url: "https://chessraiders.com" },
