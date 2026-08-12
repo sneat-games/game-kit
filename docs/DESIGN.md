@@ -46,6 +46,13 @@ Design of `@sneat/game-kit` and the two new games built on it
 | `webrtc-relay` | public | webrtc.sneat.games | existing, shared |
 | `sneat.games` | public | sneat.games | existing landing |
 
+Host workers are named **`<game>-game`** (founder rename, 2026-08-12 —
+the `-sneat-games` suffix is gone). Every Wave B game follows it:
+`four-in-a-row-game`, `gomoku-game`, `ultimate-tictactoe-game`,
+`domineering-game`, `y-game`, `reversi-game`. The custom domain is always
+`<game>.sneat.games`. Renaming a deployed Worker means deleting the old
+one to release its custom domain, then deploying the new name.
+
 Games consume the kit as an npm git dependency pinned to a tag:
 `"@sneat/game-kit": "github:sneat-games/game-kit#v0.x.y"`. The kit builds
 on install via `prepare` (tsc → `dist/` ESM + d.ts); `theme.css` is
@@ -246,8 +253,13 @@ classic + bidding, vs bot + vs friend, PWA, CG/itch, cross-promo):
   derived from board state so it binds both players identically.
 - **Domineering**: P1 places vertical 2×1 dominoes, P2 horizontal.
   Classic alternates; the first player unable to place on their turn
-  loses; no draws. Bidding: auction per placement (commit bid +
-  placement); a player with no legal placement of their orientation
+  loses; no draws. Bidding: auction per placement — both commit a **bid
+  only**, and the winner then places with full information (founder
+  confirmed 2026-08-12: Domineering's pitch is that the auction prices
+  the MOVE, i.e. tempo; there is no control choice because moving is
+  never bad here, and hiding the placement would add a guess the game
+  does not need). This is the family's one bid-only game apart from
+  D&B's auction-for-control; a player with no legal placement of their orientation
   LOSES immediately — checked after every placement, and when one
   placement strands both players the non-placer loses. This preserves
   the classic last-to-move-wins spirit under auctions; Domineering is
