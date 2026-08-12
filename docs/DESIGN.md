@@ -76,6 +76,11 @@ exported as a plain CSS file.
   `match-shell` (the 2×2 grid with a game-owned board slot), `menu`
   (mode/size/variant select).
 - No CrazyGames code in the kit — BTTT keeps its own wrapper.
+- `ui/games-footer.ts` — cross-promotion (founder, 2026-08-12): every
+  game shows a compact "More from Sneat Games" footer strip linking the
+  OTHER games + the sneat.games landing. The registry of games (id,
+  title, emoji, url) lives in the kit as the single source of truth;
+  the component takes the current game's id and renders the rest.
 
 ## Design system (`theme.css`)
 
@@ -142,6 +147,71 @@ renders the standard wide rhombus; **portrait rotates the board 90°** so
 the long axis is vertical, with each player's edge colours rotating with
 it. The renderer takes an orientation flag from a viewport query and
 re-renders on change.
+
+## Distribution: CrazyGames + itch.io (founder, 2026-08-12)
+
+All games are also published to **CrazyGames** and **itch.io** as static
+HTML5 zips (BTTT's existing CG pipeline is the template). Consequences:
+
+- The CrazyGames SDK wrapper (BTTT `web/src/crazygames/sdk.ts` — inject
+  on demand, only on a CG surface, env-gated, timeout-bounded) moves
+  INTO the kit; games call it exactly as BTTT does.
+- The game runs on foreign origins there (CG domains, `html.itch.zone`),
+  so nothing may assume `*.sneat.games`: the relay base defaults to
+  `https://webrtc.sneat.games` on every non-localhost origin
+  (localhost/127.* → `http://localhost:8787`); builds use relative asset
+  paths; the PWA service worker registers ONLY on `*.sneat.games` (and
+  never inside CG/itch iframes).
+- Invite links use a per-game `canonicalUrl` (its sneat.games subdomain)
+  when the current origin is not `*.sneat.games`, so a host playing on
+  itch/CG still hands out a working link; cross-surface PvP works — both
+  peers meet at the same relay `gameId`/room regardless of surface.
+- Each game's build produces a zippable `dist/` (`npm run build` +
+  `zip -r <game>.zip dist/`), and the README documents the CG Developer
+  Portal + itch.io (HTML project, "This file will be played in the
+  browser") upload steps.
+
+## Offline (founder, 2026-08-12)
+
+Bots run **in the browser** — single-player is fully offline-capable.
+Both new games ship as installable PWAs: a service worker
+(`@vite-pwa/astro`) precaches the app shell + assets, plus a
+`manifest.webmanifest` and icons. The SW registers only on the
+production origin (and localhost preview), never in dev. PvP requires
+network by nature; the menu shows a friendly offline notice on the
+vs-Friend option when `navigator.onLine` is false.
+
+### Reversi (added by founder 2026-08-12; 8×8 standard board)
+
+Web version of the existing Telegram-bot Reversi, living under `web/` in
+the existing **public MIT** repo `sneat-games/reversi` (BTTT pattern:
+`server-go/revgame` stays the rule-of-record; the TS engine in
+`web/src/engine` mirrors it fixture-for-fixture). Deploys to
+`reversi.sneat.games` (worker `reversi-sneat-games`), relay gameId
+`reversi`, accent green, cross-promo footer entry added.
+
+Classic: standard Reversi/Othello — flips in 8 directions, a player with
+no legal move passes, two consecutive passes (or a full board) end the
+game, most discs wins (draws possible).
+
+Bidding: both players commit (bid + cell) against the same board
+BTTT-style; the auction winner places their disc (their committed move is
+always still legal — both committed against the identical position); the
+loser's move is discarded, first-price transfer as everywhere. **Pass
+handling:** the auction only runs when BOTH players have at least one
+legal move; when exactly one player can move, they move for free (no
+auction, no payment — there is nothing to compete for); when neither can,
+the game ends. Discs decide the winner; budgets are only the control
+economy, as in all bidding games.
+
+Bot: faithful TS port of `revgame`'s `SimpleAI` — corner-first greedy
+(any corner capture beats all else; otherwise the move maximising own
+score; random tie-break among equals). Bid sizing reuses the restrained
+BTTT shape (decisive = a corner is takeable or the game ends this move).
+
+Player colours: discs are near-black / near-ivory with visible rims in
+both themes; the game overrides `--p1`/`--p2` accordingly so log bars and
+balances match the discs (contrast via rims/borders, not hue alone).
 
 ## Bots (MVP: "simple, random-with-manners")
 
