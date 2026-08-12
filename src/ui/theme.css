@@ -1,0 +1,583 @@
+/*
+ * Sneat Games design system — shared by Bidding Tic-Tac-Toe, Dots & Boxes
+ * and Hex. Adapted and upgraded from bidding-tictactoe/web/src/styles/
+ * global.css: same component vocabulary (cards, bars, badges, the match
+ * grid), generalized off tic-tac-toe specifics (X/O -> player 0/1, a
+ * hard-coded 3x3 board -> a per-game --board-cells count) and given real
+ * light/dark theming instead of BTTT's dark-only palette.
+ *
+ * Board/mark rendering itself is NOT here — see match-shell.ts's doc
+ * comment: "board rendering is 100% game-owned". This file styles the
+ * chrome around the board (cards, bars, the grid, buttons, the menu) plus a
+ * few reusable primitives (.mark, .match-over) a game's own board/outcome
+ * code can opt into.
+ */
+
+/* ---------------------------------------------------------------------- *
+ * Design tokens
+ * ---------------------------------------------------------------------- */
+
+:root {
+  /* Light palette (default). */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --border: #e2e8f0;
+  --fg: #0f172a;
+  --muted: #64748b;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+
+  /* Accent: set PER GAME (default indigo, BTTT's colour — see DESIGN.md
+     §Design system for D&B's amber and Hex's teal). Buttons derive their
+     hover/active states from this with `filter: brightness()` rather than
+     a second hard-coded colour, so a game only ever sets one variable. */
+  --accent: #4f46e5;
+  --accent-hover: #4338ca; /* used for accent-coloured TEXT hover only (e.g. site title) */
+  --accent-contrast: #fff; /* fixes BTTT's "--accent-contrant" typo lineage */
+
+  /* Player identity: consistent across every game and every mode. Always
+     paired with a non-colour channel (a letter, a glyph, a label) in
+     whatever renders it — colour alone never carries information here. */
+  --p1: #059669;
+  --p2: #e11d48;
+
+  /* Outcome colours, for the end-of-match banner and the urgent countdown.
+     Deliberately separate from --p1/--p2: "win" is from the LOCAL player's
+     point of view, not tied to which of p1/p2 they happen to be seated as. */
+  --win: #16a34a;
+  --loss: #dc2626;
+  --urgent: #ef4444;
+
+  /* Typography: a display face for headings/titles, system stack for body
+     copy and everything dense (bars, log entries, form controls). */
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Outfit Variable", var(--font-body);
+
+  /* Board-grid sizing. `--board-cells` is the count across the board's
+     narrow axis (3 for tic-tac-toe, an 11x11 Hex's `size`, a D&B grid's
+     boxes-per-side + 1 dots, etc.) — every game overrides it, and usually
+     `--cell-size` too, to fit its own board; the formula itself is the
+     part worth sharing. */
+  --cell-size: clamp(60px, 18vw, 110px);
+  --cell-gap: 6px;
+  --board-cells: 3;
+  --board-width: calc(var(--board-cells) * var(--cell-size) + (var(--board-cells) - 1) * var(--cell-gap));
+  --side-width: 300px;
+  --gap: 1rem;
+}
+
+/* Dark palette: system preference... */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #273449;
+    --border: #334155;
+    --fg: #e2e8f0;
+    --muted: #94a3b8;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --accent-hover: #a5b4fc;
+    --p1: #10b981;
+    --p2: #f43f5e;
+    --win: #22c55e;
+    --loss: #f87171;
+    --urgent: #f87171;
+  }
+}
+
+/* ...or an explicit choice via theme.ts's `setTheme`/`createThemeToggle`,
+   which always wins regardless of OS preference. */
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #273449;
+  --border: #334155;
+  --fg: #e2e8f0;
+  --muted: #94a3b8;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --accent-hover: #a5b4fc;
+  --p1: #10b981;
+  --p2: #f43f5e;
+  --win: #22c55e;
+  --loss: #f87171;
+  --urgent: #f87171;
+}
+
+/* ---------------------------------------------------------------------- *
+ * Base
+ * ---------------------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100dvh;
+}
+
+/* A game's root container: centred column sized to the match grid (board +
+   side column + gap + padding) so the header, the board and the cards all
+   share one left edge. Optional — a game may lay itself out differently. */
+.app-shell {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* ---------------------------------------------------------------------- *
+ * Site header (title/byline + the theme-toggle slot)
+ * ---------------------------------------------------------------------- */
+
+.site-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.site-header__meta { display: flex; flex-direction: column; gap: 0.15rem; }
+.site-title { margin: 0; font-family: var(--font-display); font-size: 2rem; line-height: 1.15; }
+.site-title a { color: inherit; text-decoration: none; border-radius: 6px; }
+.site-title a:hover { color: var(--accent-hover); }
+.site-title a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.site-byline { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.site-byline a { color: var(--muted); }
+.site-byline a:hover { color: var(--fg); }
+
+/* ---------------------------------------------------------------------- *
+ * Buttons
+ * ---------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: var(--surface-2);
+  color: var(--fg);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease, background 0.15s ease,
+    border-color 0.15s ease, opacity 0.15s ease;
+}
+.btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: none; }
+.btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.btn:not(:disabled):active { transform: translateY(0); box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn--primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.btn--primary:not(:disabled):hover { filter: brightness(1.08); }
+.btn--primary:not(:disabled):active { filter: brightness(0.96); }
+
+.btn--ghost { background: transparent; border-color: var(--border); color: var(--fg); }
+.btn--ghost:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+
+.btn--danger { background: transparent; border-color: var(--loss); color: var(--loss); }
+.btn--danger:not(:disabled):hover { background: var(--loss); color: #fff; }
+
+/* The armed state of a confirm-button.ts instance — one more click and
+   whatever it guards is gone — wins over any `.btn--*` variant. */
+.is-armed { background: var(--loss) !important; border-color: var(--loss) !important; color: #fff !important; }
+
+/* ---------------------------------------------------------------------- *
+ * Cards + shared bars/badges/marks
+ * ---------------------------------------------------------------------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  box-shadow: var(--shadow-sm);
+}
+.card__title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Shared progress bars: balances, bid sizes in the log, and the clock. */
+.bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.25s ease; }
+.bar-fill--p1 { background: var(--p1); }
+.bar-fill--p2 { background: var(--p2); }
+.bar-fill--win { background: var(--win); }
+.bar-fill--loss { background: var(--loss); }
+
+.badge {
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+/* A bold, colour-coded chip naming a player inline in prose — the board's
+   own marks/stones are game-owned, but this text-level chip is shared. */
+.mark { font-weight: 800; }
+.mark--p1 { color: var(--p1); }
+.mark--p2 { color: var(--p2); }
+
+.turn-result {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.5rem 0;
+  margin: 0;
+  color: var(--muted);
+}
+.turn-result strong { color: var(--fg); font-weight: 700; }
+
+.error { padding: 0.5rem 0; margin: 0; color: var(--loss); }
+
+/* ---------------------------------------------------------------------- *
+ * Balances card (bidding modes) / score card (classic modes)
+ * ---------------------------------------------------------------------- */
+
+.balances__rows { display: flex; flex-direction: column; gap: 0.4rem; }
+.balances__row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+.balances__label { min-width: 8rem; color: var(--muted); }
+
+.score-card__rows { display: flex; flex-direction: column; gap: 0.5rem; }
+.score-card__row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; }
+.score-card__chip { width: 0.8rem; height: 0.8rem; border-radius: 999px; flex: none; }
+.score-card__chip--p1 { background: var(--p1); }
+.score-card__chip--p2 { background: var(--p2); }
+.score-card__label { flex: 1; color: var(--muted); }
+.score-card__value { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 1.5em; text-align: right; }
+
+/* ---------------------------------------------------------------------- *
+ * Bid input + bid panel card
+ * ---------------------------------------------------------------------- */
+
+.bid-input { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+.bid-input label { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+.bid-input__slider { accent-color: var(--accent); flex: 1; min-width: 0; }
+.bid-input__number {
+  width: 4.5em;
+  padding: 0.3rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+}
+.bid-input--disabled { opacity: 0.5; }
+
+.bid-panel__input { display: flex; }
+.bid-panel__hint { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.bid-panel--waiting .bid-panel__hint { color: var(--fg); }
+
+.bid-panel__clock { display: flex; flex-direction: column; gap: 0.3rem; }
+/* An explicit `display` on the same specificity as the UA's `[hidden]` rule
+   wins on source order, so `hidden` needs saying again here or the expired
+   countdown stays on screen for the rest of the match. */
+.bid-panel__clock[hidden] { display: none; }
+.bid-panel__clock-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.bid-panel__clock-secs {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--fg);
+}
+.bar-track--clock { flex: none; width: 100%; height: 6px; }
+/* Ticks land every 100ms, so the fill must ease at least that fast or the
+   bar visibly lags the number beside it. */
+.bar-fill--clock { background: var(--accent); transition: width 0.1s linear; }
+.bid-panel__auto { margin: 0; font-size: 0.75rem; color: var(--muted); }
+
+.bid-panel__clock--urgent .bid-panel__clock-secs { color: var(--urgent); }
+.bid-panel__clock--urgent .bar-fill--clock { background: var(--urgent); }
+
+/* ---------------------------------------------------------------------- *
+ * Game log card
+ * ---------------------------------------------------------------------- */
+
+.game-log { max-height: 60vh; }
+.game-log__entries { display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; }
+.game-log__entry {
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 0.55rem 0.6rem;
+  font-size: 0.85rem;
+}
+.game-log__entry-head { margin-bottom: 0.4rem; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+.game-log__turn { color: var(--muted); font-weight: 400; }
+.game-log__tie {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.game-log__bid { display: flex; align-items: center; gap: 0.4rem; margin: 0.2rem 0; }
+.game-log__bid-label { min-width: 5.5rem; font-size: 0.75rem; color: var(--muted); }
+/* The bars are coloured by PLAYER, so who won the turn is carried by weight
+   rather than by hue. */
+.game-log__bid--dim { opacity: 0.45; }
+.game-log__bid--won .game-log__bid-label { color: var(--fg); font-weight: 600; }
+.game-log__bid-won-marker { color: var(--muted); font-size: 0.7rem; }
+
+/* ---------------------------------------------------------------------- *
+ * Match shell: 2x2 grid
+ * ---------------------------------------------------------------------- */
+/*
+   ┌──────────────┬──────────────┐
+   │ top-left     │ top-right    │
+   ├──────────────┼──────────────┤
+   │ board        │ log          │
+   └──────────────┴──────────────┘
+   Source order is top-left, top-right, board, log — which is both the
+   auto-placement order above and the stacking order on narrow screens.
+*/
+.match {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 1fr);
+  /* Flush left, so the heading, the top-left card and the board share one
+     edge instead of the grid floating in the middle of the page. */
+  justify-content: start;
+}
+@media (min-width: 720px) {
+  .match {
+    grid-template-columns: var(--board-width) var(--side-width);
+    align-items: start;
+  }
+}
+.match__top-left, .match__top-right, .match__board, .match__log { min-width: 0; }
+.match__board-slot { min-width: 0; }
+
+.match__controls .btn { margin-top: 0.25rem; }
+.match__actions { margin-top: 0.75rem; }
+.match__actions[hidden] { display: none; }
+
+/* ---------------------------------------------------------------------- *
+ * End-of-match banner (styling contract only — each game builds its own
+ * headline/outcome DOM, since only it knows what "win" means on its board)
+ * ---------------------------------------------------------------------- */
+
+.match-over {
+  margin: 1rem 0;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: var(--shadow-sm);
+}
+.match-over--win { border-left-color: var(--win); }
+.match-over--loss { border-left-color: var(--loss); }
+.match-over--draw { border-left-color: var(--muted); }
+
+.match-over__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.match-over--win .match-over__headline { color: var(--win); }
+.match-over--loss .match-over__headline { color: var(--loss); }
+.match-over--draw .match-over__headline { color: var(--muted); }
+
+.match-over__balances {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.match-over__balance {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.match-over__balance-label { color: var(--muted); font-size: 0.9rem; }
+.match-over__balance-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.match-over__balance-delta {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5em;
+  text-align: right;
+}
+.match-over__balance-delta--up { color: var(--win); }
+.match-over__balance-delta--down { color: var(--loss); }
+
+/* ---------------------------------------------------------------------- *
+ * Menu (mode/variant/size selection)
+ * ---------------------------------------------------------------------- */
+
+.menu { display: flex; flex-direction: column; gap: 1rem; align-items: stretch; max-width: 480px; margin: 0 auto; }
+.menu__title { margin: 0; font-family: var(--font-display); font-size: 1.6rem; text-align: center; }
+.menu__form { display: flex; flex-direction: column; gap: 1.1rem; }
+.menu__group { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.menu__legend {
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.menu__options { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.menu-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  flex: 1 1 140px;
+  transition: border-color 0.15s ease, transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+.menu-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.menu-card:has(.menu-card__input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.menu-card__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.menu-card__input:focus-visible ~ .menu-card__body { outline: 2px solid var(--accent); outline-offset: 2px; }
+.menu-card__label { font-weight: 600; }
+.menu-card__desc { font-size: 0.78rem; color: var(--muted); }
+
+.menu__play { align-self: stretch; margin-top: 0.25rem; font-size: 1.05rem; padding: 0.75rem 1rem; }
+
+/* The simple (BTTT-style) three-button menu. */
+.menu__btn { min-width: 200px; padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid transparent;
+  background: var(--accent); color: var(--accent-contrast); font: inherit; font-weight: 600; cursor: pointer;
+  transition: filter 0.12s ease, transform 0.12s ease; }
+.menu__btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.menu__btn--leave { background: var(--surface-2); color: var(--fg); border-color: var(--border); }
+
+/* ---------------------------------------------------------------------- *
+ * Theme toggle
+ * ---------------------------------------------------------------------- */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); border-color: var(--accent); }
+.theme-toggle:active { transform: translateY(0); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-toggle__icon { width: 1.15rem; height: 1.15rem; }
+/* Show the icon for the theme a click would switch TO. */
+.theme-toggle[data-theme="light"] .theme-toggle__icon--sun { display: none; }
+.theme-toggle[data-theme="dark"] .theme-toggle__icon--moon { display: none; }
+
+/* ---------------------------------------------------------------------- *
+ * Games footer (cross-promotion)
+ * ---------------------------------------------------------------------- */
+
+.games-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.games-footer__heading {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.games-footer__links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.games-footer__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.games-footer__pill:hover { transform: translateY(-1px); border-color: var(--accent); box-shadow: var(--shadow-sm); }
+.games-footer__pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 480px) {
+  .games-footer__pill { padding: 0.3rem 0.6rem; font-size: 0.76rem; }
+}
+
+/* ---------------------------------------------------------------------- *
+ * Motion
+ * ---------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+}
