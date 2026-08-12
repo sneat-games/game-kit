@@ -65,10 +65,26 @@ describe("createGamesFooter", () => {
 
   it("links every other game in registry order, excluding the current one, plus 'All games' last", () => {
     const el = createGamesFooter({ current: "hex" });
-    const labels = [...el.querySelectorAll(".games-footer__pill")].map((a) => a.textContent);
-    const expected = KNOWN_GAMES.filter((g) => g.id !== "hex").map((g) => `${g.emoji} ${g.title}`);
+    // The visible label lives in its own span (the emoji is a separate,
+    // aria-hidden element — see pill()), so assert on the label text.
+    const labels = [...el.querySelectorAll(".games-footer__pill")].map(
+      (a) => a.querySelector(".games-footer__label")!.textContent,
+    );
+    const expected = KNOWN_GAMES.filter((g) => g.id !== "hex").map((g) => g.title);
     expected.push("All games");
     expect(labels).toEqual(expected);
+  });
+
+  it("renders each game's emoji as a separate, aria-hidden element so it is not announced", () => {
+    const el = createGamesFooter({ current: "hex" });
+    const first = el.querySelector(".games-footer__pill")!;
+    const icon = first.querySelector(".games-footer__emoji")!;
+    const other = KNOWN_GAMES.find((g) => g.id !== "hex")!;
+    expect(icon.textContent).toBe(other.emoji);
+    expect(icon.getAttribute("aria-hidden")).toBe("true");
+    // "All games" carries no emoji at all.
+    const pills = [...el.querySelectorAll(".games-footer__pill")];
+    expect(pills[pills.length - 1].querySelector(".games-footer__emoji")).toBeNull();
   });
 
   it("uses the correct href for each pill, and opens in a new tab safely", () => {

@@ -51,7 +51,7 @@ export function createGamesFooter(opts: { current: string }): HTMLElement {
 
   for (const game of KNOWN_GAMES) {
     if (game.id === opts.current) continue;
-    links.append(pill(`${game.emoji} ${game.title}`, game.url));
+    links.append(pill(game.title, game.url, game.emoji));
   }
   links.append(pill("All games", "https://sneat.games/"));
 
@@ -59,12 +59,30 @@ export function createGamesFooter(opts: { current: string }): HTMLElement {
   return footer;
 }
 
-function pill(label: string, href: string): HTMLAnchorElement {
+/**
+ * One pill. The emoji is its OWN element rather than part of the label
+ * string for two reasons: a plain "<emoji> <title>" text node renders with
+ * no visible gap for colour-emoji glyphs (the pill's flex `gap` cannot
+ * apply inside a single anonymous flex item, and the emoji font eats the
+ * space), and a decorative glyph should not be announced — so it is
+ * aria-hidden and the accessible name stays just the title.
+ */
+function pill(title: string, href: string, emoji?: string): HTMLAnchorElement {
   const a = document.createElement("a");
   a.className = "games-footer__pill";
   a.href = href;
   a.target = "_blank";
   a.rel = "noopener";
-  a.textContent = label;
+  if (emoji) {
+    const icon = document.createElement("span");
+    icon.className = "games-footer__emoji";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = emoji;
+    a.append(icon);
+  }
+  const label = document.createElement("span");
+  label.className = "games-footer__label";
+  label.textContent = title;
+  a.append(label);
   return a;
 }
