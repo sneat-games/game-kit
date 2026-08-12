@@ -40,8 +40,8 @@ Design of `@sneat/game-kit` and the two new games built on it
 | Repo | Visibility | Deploys to | Worker name |
 |---|---|---|---|
 | `game-kit` | public (MIT) | npm git-dep only | — |
-| `dots-and-boxes` | private | dots-and-boxes.sneat.games | `dots-and-boxes-sneat-games` |
-| `hex` | private | hex.sneat.games | `hex-sneat-games` |
+| `dots-and-boxes` | private | dots-and-boxes.sneat.games | `dots-and-boxes-game` |
+| `hex` | private | hex.sneat.games | `hex-game` |
 | `bidding-tictactoe` | public (GPL-3.0) | bidding-tictactoe.sneat.games | existing |
 | `webrtc-relay` | public | webrtc.sneat.games | existing, shared |
 | `sneat.games` | public | sneat.games | existing landing |
@@ -191,7 +191,7 @@ Web version of the existing Telegram-bot Reversi, living under `web/` in
 the existing **public MIT** repo `sneat-games/reversi` (BTTT pattern:
 `server-go/revgame` stays the rule-of-record; the TS engine in
 `web/src/engine` mirrors it fixture-for-fixture). Deploys to
-`reversi.sneat.games` (worker `reversi-sneat-games`), relay gameId
+`reversi.sneat.games` (worker `reversi-game`), relay gameId
 `reversi`, accent green, cross-promo footer entry added.
 
 Classic: standard Reversi/Othello — flips in 8 directions, a player with

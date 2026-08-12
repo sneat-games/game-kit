@@ -66,7 +66,7 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
 - Standings preview panel (REAL local vs-bot W/L from localStorage +
   mocked ladder badged "Powered by Competios — coming soon").
 - PWA (`@vite-pwa/astro`) + committed 192/512 icons; SW gated per (2).
-- `host-worker/` per BTTT (`<game>-sneat-games`, custom domain) — build
+- `host-worker/` per BTTT (`<game>-game`, custom domain) — build
   it, do NOT deploy.
 - Relative-path `dist/` so the same build zips for CrazyGames/itch.io
   (D&B's `scripts/relativize-dist.mjs` is the working solution).
