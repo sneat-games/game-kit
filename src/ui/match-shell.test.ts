@@ -140,7 +140,20 @@ describe("layout stylesheet contract", () => {
 
   it("sizes the match columns as board-width + one side width", () => {
     expect(css).toMatch(/\.match\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
-    expect(css).toMatch(/grid-template-columns:\s*var\(--board-width\) var\(--side-width\)/);
+    expect(css).toMatch(
+      /grid-template-columns:\s*minmax\(0, var\(--board-width\)\) minmax\(0, var\(--side-width\)\)/,
+    );
+  });
+
+  it("lets BOTH match columns shrink, so a wide board cannot overflow the shell", () => {
+    // Two fixed tracks summed to more than the shell for any board wider
+    // than ~400px, which put a horizontal scrollbar on the page between
+    // 720-810px and broke big-board games outright. Both tracks must stay
+    // wrapped in minmax(0, …).
+    const twoCol = css.match(/grid-template-columns:\s*minmax\(0, var\(--board-width\)\)[^;]*/);
+    expect(twoCol).not.toBeNull();
+    expect(twoCol![0]).toContain("minmax(0, var(--side-width))");
+    expect(css).not.toMatch(/grid-template-columns:\s*var\(--board-width\) var\(--side-width\)/);
   });
 
   it("collapses to a single column on narrow screens", () => {
@@ -148,6 +161,6 @@ describe("layout stylesheet contract", () => {
     expect(wide).toBeGreaterThan(-1);
     // The two-column rule is inside the media query, so the default is the
     // single-column stack.
-    expect(css.indexOf("var(--board-width) var(--side-width)")).toBeGreaterThan(wide);
+    expect(css.indexOf("minmax(0, var(--board-width))")).toBeGreaterThan(wide);
   });
 });

@@ -128,7 +128,11 @@ body {
    side column + gap + padding) so the header, the board and the cards all
    share one left edge. Optional — a game may lay itself out differently. */
 .app-shell {
-  max-width: 700px;
+  /* Wide enough for a large board (Gomoku's 15x15 is ~620px) beside the
+     300px side column; games with small boards still look centred because
+     the match grid is flush-left and its tracks shrink to content. A game
+     may override --shell-max for an unusually wide board. */
+  max-width: var(--shell-max, 1010px);
   width: 100%;
   margin: 0 auto;
   padding: 1.5rem 1rem;
@@ -377,7 +381,13 @@ body {
 }
 @media (min-width: 720px) {
   .match {
-    grid-template-columns: var(--board-width) var(--side-width);
+    /* Both tracks must be able to SHRINK. Two fixed tracks
+       (`var(--board-width) var(--side-width)`) sum to more than the shell
+       on any board wider than ~400px, which pushed a horizontal scrollbar
+       onto the page at 720-810px and made big-board games (Gomoku's 15x15)
+       overflow outright. `minmax(0, …)` keeps the preferred sizes while
+       letting the grid give way when the shell is narrower. */
+    grid-template-columns: minmax(0, var(--board-width)) minmax(0, var(--side-width));
     align-items: start;
   }
 }
