@@ -22,6 +22,8 @@ export * from "./ui/menu.js";
 export * from "./ui/theme.js";
 export * from "./ui/games-footer.js";
 
+export * from "./pwa/service-worker.js";
+
 export * from "./crazygames/sdk.js";
 
 // theme.css and test-relay.mjs are not re-exported here — they are consumed

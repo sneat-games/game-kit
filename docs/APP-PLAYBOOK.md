@@ -56,6 +56,16 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
    move" or similar, confirm nothing else is already serving that port
    (`lsof -ti :PORT`) — a leftover server from another repo/build
    produced exactly that false alarm once.
+9. **Register the worker with the kit's `registerServiceWorker()` — never
+   a bare `navigator.serviceWorker.register()`.** With
+   `injectRegister: false`, `registerType: "autoUpdate"` is INERT: the
+   generated worker skips waiting only when messaged, and vite-plugin-pwa
+   puts that message in the registration code it did not inject. All nine
+   PWA games shipped the bare call, so every returning player stayed
+   frozen on the build they first loaded — two landed fixes reached
+   nobody who had already played. Verify after any deploy that the LIVE
+   page runs the new bundle, not merely that the server offers it (see
+   the release check below).
 
 ## Non-negotiables (all games)
 
@@ -85,6 +95,24 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
   ends, not where the match does.
 - `npm run typecheck && lint && test && build && e2e` all green before
   pushing; `git fetch && git merge --ff-only origin/main` first.
+
+## Release check — "deployed" is not "delivered"
+
+`wrangler deploy` succeeding proves the SERVER has the new build. It says
+nothing about what a RETURNING player runs, because a service worker
+answers from its own precache. After deploying, load the real domain in a
+browser that has visited before and assert on the DOM, not the origin:
+
+```js
+document.querySelector('script[src]').src        // the hash actually running
+navigator.serviceWorker.getRegistrations()       // .waiting must not stay true
+```
+
+If the running hash differs from the one `curl https://<host>/` reports,
+the update did not land — see gotcha 9. Grepping the served bundle is not
+enough on its own either: the cross-promotion registry ships whole and is
+filtered at runtime, so a bundle can contain a link the footer never
+renders.
 
 ## Board rendering house style
 

@@ -11,5 +11,7 @@ export default defineConfig({
     // each need to remember it.
     environment: "node",
     environmentMatchGlobs: [["src/ui/**/*.test.ts", "jsdom"]],
+    // src/pwa/*.test.ts carries its own `// @vitest-environment jsdom`
+    // annotation — it needs a DOM but is not a ui/ module.
   },
 });
