@@ -95,6 +95,10 @@ exported as a plain CSS file.
   stack for body. Rounded radii (12/8), soft borders + subtle shadows.
 - Micro-interactions: edge-draw, box-fill pop, stone drop, win-path glow;
   all gated by `prefers-reduced-motion`.
+- Material cues (founder, 2026-08-12: approved "but not too much"): at
+  most ONE subtle, CSS-only, theme-aware material hint per game, on the
+  board area only — D&B gets a faint paper-grain, Gomoku a warm wood
+  tone. No images, no heavy textures; other games get none for now.
 
 ## PvP protocol v1
 
