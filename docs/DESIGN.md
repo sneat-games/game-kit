@@ -137,6 +137,12 @@ draws (a filled Hex board always has a winner).
 Bidding: no swap; each turn both commit (bid + cell) BTTT-style; auction
 winner places their committed stone. First side to connect wins.
 
+Board orientation is responsive (founder, 2026-08-12): landscape/desktop
+renders the standard wide rhombus; **portrait rotates the board 90°** so
+the long axis is vertical, with each player's edge colours rotating with
+it. The renderer takes an orientation flag from a viewport query and
+re-renders on change.
+
 ## Bots (MVP: "simple, random-with-manners")
 
 - D&B: take a completing edge if any; else prefer a safe edge (one that
