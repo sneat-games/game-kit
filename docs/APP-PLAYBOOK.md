@@ -73,9 +73,16 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
 - SpecScore `spec/features/web-app/README.md` authored via the
   `specscore` CLI (`specscore feature new`, then `specscore spec lint`);
   never hand-edit status/frontmatter/index rows.
-- Playwright journeys: classic vs bot → terminal screen; bidding vs bot →
-  terminal screen with conserved balances; PvP across two browser
+- Playwright journeys: classic vs bot → terminal screen **→ "Back to
+  menu" → the menu is visible again → a NEW match starts**; bidding vs
+  bot → terminal screen with conserved balances; PvP across two browser
   contexts against the kit's `test-relay.mjs`; theme toggle persistence.
+  **Never end a journey at the terminal banner.** That exact stopping
+  point — one click short of the post-match controls — let a dead "Back
+  to menu" button ship in EIGHT games at once: every suite asserted the
+  banner and stopped, so nobody's `bootstrap` was ever driven past the
+  end of a single session. A journey ends where the player's session
+  ends, not where the match does.
 - `npm run typecheck && lint && test && build && e2e` all green before
   pushing; `git fetch && git merge --ff-only origin/main` first.
 
