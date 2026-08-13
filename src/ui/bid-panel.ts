@@ -40,7 +40,24 @@ export interface BidPanel {
   setWaiting(message: string): void;
 }
 
-export function createBidPanel(): BidPanel {
+export interface BidPanelOptions {
+  /**
+   * The line shown under the bid controls each turn. Defaults to the
+   * game-agnostic "Make your move to commit."
+   *
+   * Games whose move is a specific, nameable gesture should say so — a grid
+   * game's "Click a cell to commit." tells a first-time player what to do;
+   * "make your move" only tells them that a move exists. This option is why
+   * a game can share this panel WITHOUT flattening its own copy: when BTTT
+   * adopted the kit's bid-panel it silently inherited the generic line and
+   * lost its more precise one, which is exactly the kind of quiet regression
+   * that makes teams keep private copies instead of reusing.
+   */
+  moveHint?: string;
+}
+
+export function createBidPanel(opts: BidPanelOptions = {}): BidPanel {
+  const moveHint = opts.moveHint ?? "Make your move to commit.";
   const el = document.createElement("section");
   el.className = "card bid-panel";
   el.setAttribute("aria-label", "Your bid");
@@ -105,7 +122,7 @@ export function createBidPanel(): BidPanel {
       initial: opts.initial ?? Math.floor(opts.max / 2),
     });
     slot.append(input.el);
-    hint.textContent = "Make your move to commit.";
+    hint.textContent = moveHint;
     el.classList.remove("bid-panel--waiting");
   }
 

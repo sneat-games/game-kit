@@ -23,6 +23,32 @@ const clockBox = (p: ReturnType<typeof panel>) =>
   p.el.querySelector<HTMLElement>("[data-clock]")!;
 
 describe("bid panel", () => {
+  // A game adopting this panel must not silently inherit generic copy in
+  // place of its own more precise line — that regression is what makes
+  // teams keep private copies rather than reuse the kit.
+  it("uses the game-agnostic move hint by default", () => {
+    const p = panel();
+    p.beginTurn({ max: 50 });
+    expect(p.el.querySelector("[data-bid-hint]")!.textContent).toBe("Make your move to commit.");
+  });
+
+  it("lets a game name its own move gesture", () => {
+    const p = createBidPanel({ moveHint: "Click a cell to commit." });
+    document.body.append(p.el);
+    p.beginTurn({ max: 50 });
+    expect(p.el.querySelector("[data-bid-hint]")!.textContent).toBe("Click a cell to commit.");
+  });
+
+  it("restores the game's own hint after a waiting message", () => {
+    const p = createBidPanel({ moveHint: "Click a cell to commit." });
+    document.body.append(p.el);
+    p.beginTurn({ max: 50 });
+    p.setWaiting("Waiting for your opponent…");
+    expect(p.el.querySelector("[data-bid-hint]")!.textContent).toBe("Waiting for your opponent…");
+    p.beginTurn({ max: 40 });
+    expect(p.el.querySelector("[data-bid-hint]")!.textContent).toBe("Click a cell to commit.");
+  });
+
   it("seeds the bid at half the balance and caps it there", () => {
     const p = panel();
     p.beginTurn({ max: 80 });
