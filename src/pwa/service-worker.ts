@@ -30,11 +30,27 @@
 // The controller check is what keeps a first-time visit from reloading
 // itself pointlessly, and `reloading` is what keeps a reload from looping.
 
+import { isSneatGamesHost } from "./host.js";
+
 export interface RegisterServiceWorkerOptions {
-  /** Worker script URL. Defaults to the built worker at the site root. */
+  /**
+   * Worker script URL. Defaults to `sw.js` resolved against the page
+   * (`document.baseURI`), i.e. the game's OWN built worker in its own
+   * directory: `/reversi/sw.js` at `https://sneat.games/reversi/`.
+   *
+   * Never the site root: since the games moved under sneat.games/<slug>/,
+   * the root `/sw.js` belongs to the landing (a kill switch for the retired
+   * subdomains), and a worker registered there would control every game.
+   */
   scriptUrl?: string;
   /**
-   * Whether to register at all. Defaults to "*.sneat.games only" — never in
+   * Registration scope. Defaults to the page's own directory (`./` against
+   * `document.baseURI`), so each game's worker controls only `/<slug>/`.
+   */
+  scope?: string;
+  /**
+   * Whether to register at all. Defaults to "sneat.games or *.sneat.games
+   * only" (see `isSneatGamesHost`) — never in
    * a CrazyGames/itch.io iframe, and deliberately never on localhost, where
    * a precaching worker keeps serving the PREVIOUS build after a rebuild and
    * makes a landed fix look broken (APP-PLAYBOOK gotcha 2).
@@ -50,7 +66,20 @@ export interface RegisterServiceWorkerOptions {
 }
 
 function defaultGate(): boolean {
-  return window.location.hostname.endsWith(".sneat.games");
+  return isSneatGamesHost(window.location.hostname);
+}
+
+/**
+ * True when a registration would take over the apex's root scope. That
+ * happens only when a game page is opened without its trailing slash
+ * (`/reversi` instead of `/reversi/`), which makes `./` resolve to `/`.
+ * The static host redirects those URLs, but if one slips through we would
+ * rather skip offline mode than let one game's worker control the landing
+ * and every other game.
+ */
+function claimsApexRoot(scope: string): boolean {
+  const u = new URL(scope, document.baseURI);
+  return u.hostname === "sneat.games" && u.pathname === "/";
 }
 
 /**
@@ -80,7 +109,13 @@ export async function registerServiceWorker(
   };
 
   try {
-    const registration = await container.register(opts.scriptUrl ?? "/sw.js");
+    const scriptUrl = opts.scriptUrl ?? new URL("sw.js", document.baseURI).href;
+    const scope = opts.scope ?? new URL("./", document.baseURI).href;
+    if (claimsApexRoot(scope)) {
+      console.warn("[pwa] not registering a game service worker at the sneat.games root scope");
+      return null;
+    }
+    const registration = await container.register(scriptUrl, { scope });
 
     // Only listen once we know registration succeeded, so a failed register
     // leaves no stray listener behind.

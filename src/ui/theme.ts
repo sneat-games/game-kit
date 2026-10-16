@@ -9,7 +9,7 @@
 // media query alone decide — this is the only representation of "system":
 // there is no `data-theme="system"` value written anywhere.
 
-const STORAGE_KEY = "sneat-games-theme";
+import { THEME_STORAGE_KEY as STORAGE_KEY } from "../storage/storage.js";
 
 export type ThemePreference = "light" | "dark" | "system";
 export type ResolvedTheme = "light" | "dark";

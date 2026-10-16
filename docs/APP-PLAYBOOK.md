@@ -28,7 +28,9 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
    pins the resolved commit SHA, and npm will not re-resolve a git dep
    whose lock entry still satisfies it. Verify after installing:
    `grep -c "<a string from the new version>" node_modules/@sneat/game-kit/dist/theme.css`.
-2. **Service worker: `*.sneat.games` ONLY.** Never register on
+2. **Service worker: sneat.games ONLY** (the apex and `*.sneat.games`,
+   see `isSneatGamesHost`), registered by the kit relative to the page so
+   its scope is the game's own `/<slug>/` — never the root `/sw.js`. Never register on
    `localhost`/`127.*`. The worker precaches built asset hashes, so a
    local preview keeps serving the PREVIOUS build after a rebuild, and a
    landed fix looks broken. (If you ever inherit a stale one:
@@ -89,10 +91,14 @@ Both have: `src/main.ts` (boot + routing + SW + footer), `src/ui/menu.ts`,
 - Standings preview panel (REAL local vs-bot W/L from localStorage +
   mocked ladder badged "Powered by Competios — coming soon").
 - PWA (`@vite-pwa/astro`) + committed 192/512 icons; SW gated per (2).
-- `host-worker/` per BTTT (`<game>-game`, custom domain) — build
-  it, do NOT deploy.
-- Relative-path `dist/` so the same build zips for CrazyGames/itch.io
-  (D&B's `scripts/relativize-dist.mjs` is the working solution).
+- No host Worker. The game is served from `https://sneat.games/<slug>/`
+  (DESIGN.md "Hosting"): a `web-release.yml` workflow publishes `dist/` as
+  a `web-<sha>` release asset with a sha256, and sneat.games pins it.
+- Relative-path `dist/`: `npm run build` = `astro build &&
+  sneat-relativize-dist` (the kit's bin; it also fixes `sw.js`). The same
+  build then works under `/<slug>/` and zips for CrazyGames/itch.io.
+- `consumeMigratedStorage()` first in `bootstrap()`; invite links via
+  `inviteBaseUrl("<slug>")`; new storage keys via `gameStorageKey()`.
 - SpecScore `spec/features/web-app/README.md` authored via the
   `specscore` CLI (`specscore feature new`, then `specscore spec lint`);
   never hand-edit status/frontmatter/index rows.

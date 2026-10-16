@@ -182,6 +182,36 @@ HTML5 zips (BTTT's existing CG pipeline is the template). Consequences:
   Portal + itch.io (HTML project, "This file will be played in the
   browser") upload steps.
 
+## Hosting: one directory per game on sneat.games (founder, 2026-10-16)
+
+Supersedes the per-game `<host>.sneat.games` subdomains and host Workers
+described elsewhere in this document. Every game is served from
+`https://sneat.games/<slug>/` by the assets-only `sneat-games` Worker
+(repo `sneat-games/sneat.games`); the slug is the old host label
+(`reversi`, `greed`, `y`, `bidding-tictactoe`, ...). A game repo no longer
+deploys anything: it publishes its built `dist/` as a versioned release
+asset, and sneat.games pins it in `games.lock.json`.
+
+What that asks of a game (all provided by this kit):
+
+- **Relative everything.** `npm run build` = `astro build &&
+  sneat-relativize-dist`. The bin also rewrites the generated `sw.js`, whose
+  `{url:"/"}` precache entry and `createHandlerBoundToURL("/")` fallback
+  would otherwise serve the sneat.games landing page from inside the game.
+  It fails the build if any root-absolute URL survives.
+- **Service worker in the game's own directory.** `registerServiceWorker()`
+  registers `sw.js` relative to the page with scope `./`, so a game's worker
+  controls `/<slug>/` only. The root `/sw.js` belongs to the landing (a kill
+  switch that retires the old subdomains' workers); a game must never
+  register it. The gate is `isSneatGamesHost()` — the apex counts.
+- **Invite links** use `inviteBaseUrl(slug)`: the current page on the
+  game's own surface, `gameUrl(slug)` (`https://sneat.games/<slug>/`) off it.
+- **Storage is shared by every game on the origin.** New keys go through
+  `gameStorageKey(gameId, name)`; only `sneat-games-*` keys are shared on
+  purpose. `LEGACY_STORAGE_KEYS` lists what existed before the move, and
+  `consumeMigratedStorage()` — first thing in `bootstrap()` — imports those
+  from the old subdomain's `/__migrate.html` hand-over (`#migrate=`).
+
 ## Offline (founder, 2026-08-12)
 
 Bots run **in the browser** — single-player is fully offline-capable.

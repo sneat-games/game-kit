@@ -17,9 +17,13 @@
     "node": ">=22"
   },
   "files": [
+    "bin",
     "dist",
     "src"
   ],
+  "bin": {
+    "sneat-relativize-dist": "bin/sneat-relativize-dist.mjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
