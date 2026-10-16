@@ -1,6 +1,6 @@
 {
   "name": "@sneat/game-kit",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -17,9 +17,13 @@
     "node": ">=22"
   },
   "files": [
+    "bin",
     "dist",
     "src"
   ],
+  "bin": {
+    "sneat-relativize-dist": "bin/sneat-relativize-dist.mjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

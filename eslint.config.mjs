@@ -25,9 +25,10 @@ export default [
     },
   },
   {
-    // Plain-JS helpers: the build's asset-copy script and the test-relay
-    // server (shipped to dist/ unbuilt, so it must lint as itself).
-    files: ["scripts/**/*.mjs", "src/test-relay.mjs"],
+    // Plain-JS helpers: the build's asset-copy script, the
+    // sneat-relativize-dist bin games run after `astro build`, and the
+    // test-relay server (shipped to dist/ unbuilt, so it must lint as itself).
+    files: ["scripts/**/*.mjs", "bin/**/*.mjs", "src/test-relay.mjs"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

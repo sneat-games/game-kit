@@ -32,8 +32,10 @@ class FakeContainer extends EventTarget {
   registration = new FakeRegistration();
   registerError: Error | null = null;
   registerCalls: string[] = [];
-  register(url: string) {
+  registerOptions: (RegistrationOptions | undefined)[] = [];
+  register(url: string, options?: RegistrationOptions) {
     this.registerCalls.push(url);
+    this.registerOptions.push(options);
     if (this.registerError) return Promise.reject(this.registerError);
     return Promise.resolve(this.registration);
   }
@@ -63,7 +65,15 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  document.head.querySelectorAll("base").forEach((b) => b.remove());
 });
+
+/** Pretend the page lives at `href` — `document.baseURI` follows <base>. */
+function pageAt(href: string) {
+  const base = document.createElement("base");
+  base.href = href;
+  document.head.append(base);
+}
 
 describe("registerServiceWorker", () => {
   it("does not register when the gate says no", async () => {
@@ -93,9 +103,33 @@ describe("registerServiceWorker", () => {
     await expect(registerServiceWorker({ shouldRegister: always })).resolves.toBeNull();
   });
 
-  it("registers the default worker URL", async () => {
+  it("registers the page's own sw.js with the page's own scope by default", async () => {
+    pageAt("https://sneat.games/reversi/");
     await registerServiceWorker({ shouldRegister: always });
-    expect(container.registerCalls).toEqual(["/sw.js"]);
+    expect(container.registerCalls).toEqual(["https://sneat.games/reversi/sw.js"]);
+    expect(container.registerOptions).toEqual([{ scope: "https://sneat.games/reversi/" }]);
+  });
+
+  it("never defaults to the site-root worker (the landing's kill switch)", async () => {
+    pageAt("https://reversi.sneat.games/");
+    await registerServiceWorker({ shouldRegister: always });
+    // A legacy subdomain root is still its own origin's root — that is fine;
+    // what matters is the URL is derived from the page, not hard-coded.
+    expect(container.registerCalls).toEqual(["https://reversi.sneat.games/sw.js"]);
+  });
+
+  it("refuses to take over the sneat.games root scope", async () => {
+    // `/reversi` without its trailing slash makes `./` resolve to `/`.
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    pageAt("https://sneat.games/reversi");
+    await expect(registerServiceWorker({ shouldRegister: always })).resolves.toBeNull();
+    expect(container.registerCalls).toEqual([]);
+  });
+
+  it("honours an explicit scriptUrl and scope", async () => {
+    await registerServiceWorker({ shouldRegister: always, scriptUrl: "/x/sw.js", scope: "/x/" });
+    expect(container.registerCalls).toEqual(["/x/sw.js"]);
+    expect(container.registerOptions).toEqual([{ scope: "/x/" }]);
   });
 
   // The regression this module exists for. Before the fix, an updated worker

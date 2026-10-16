@@ -23,9 +23,15 @@ export * from "./ui/theme.js";
 export * from "./ui/games-footer.js";
 
 export * from "./pwa/service-worker.js";
+export * from "./pwa/host.js";
+
+export * from "./storage/storage.js";
 
 export * from "./crazygames/sdk.js";
 
+// src/build/relativize.ts is deliberately NOT exported: it is build-time
+// code for the `sneat-relativize-dist` bin, not something a game bundles.
+//
 // theme.css and test-relay.mjs are not re-exported here — they are consumed
 // directly via the package's "./theme.css" and "./test-relay" exports (see
 // package.json), not through JS/TS imports.
