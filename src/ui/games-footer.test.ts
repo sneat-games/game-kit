@@ -26,19 +26,19 @@ describe("KNOWN_GAMES", () => {
       id: "hex",
       title: "Hex",
       emoji: "⬡",
-      url: "https://hex.sneat.games",
+      url: "https://sneat.games/hex/",
     });
     expect(KNOWN_GAMES.find((g) => g.id === "reversi")).toEqual({
       id: "reversi",
       title: "Reversi",
       emoji: "⚫",
-      url: "https://reversi.sneat.games",
+      url: "https://sneat.games/reversi/",
     });
     expect(KNOWN_GAMES.find((g) => g.id === "gomoku")).toEqual({
       id: "gomoku",
       title: "Gomoku",
       emoji: "5️⃣",
-      url: "https://gomoku.sneat.games",
+      url: "https://sneat.games/gomoku/",
     });
     // The founder's main game: cross-promoted from every casual game, even
     // though it does not itself consume this kit.
@@ -48,6 +48,15 @@ describe("KNOWN_GAMES", () => {
       emoji: "♞",
       url: "https://chessraiders.com",
     });
+  });
+
+  it("links every kit game to its directory on sneat.games, slug = old host label", () => {
+    for (const g of KNOWN_GAMES) {
+      if (g.id === "chessraiders") continue;
+      expect(g.url).toMatch(/^https:\/\/sneat\.games\/[a-z0-9-]+\/$/);
+    }
+    expect(KNOWN_GAMES.find((g) => g.id === "greed-game")!.url).toBe("https://sneat.games/greed/");
+    expect(KNOWN_GAMES.find((g) => g.id === "y")!.url).toBe("https://sneat.games/y/");
   });
 
   it("ends with Chess Raiders (the founder's main game gets the last cross-promo slot)", () => {
@@ -91,7 +100,7 @@ describe("createGamesFooter", () => {
     const el = createGamesFooter({ current: "dots-and-boxes" });
     const pills = [...el.querySelectorAll<HTMLAnchorElement>(".games-footer__pill")];
     const expectedHrefs = [
-      ...KNOWN_GAMES.filter((g) => g.id !== "dots-and-boxes").map((g) => `${g.url}/`),
+      ...KNOWN_GAMES.filter((g) => g.id !== "dots-and-boxes").map((g) => new URL(g.url).href),
       "https://sneat.games/",
     ];
     expect(pills.map((a) => a.href)).toEqual(expectedHrefs);
